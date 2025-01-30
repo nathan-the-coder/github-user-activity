@@ -1,45 +1,70 @@
-import json
 import requests
 import sys
+from collections import defaultdict
 
 def get_data(username: str):
-    resp = requests.get(f"https://api.github.com/users/{username}/events")
-    return resp.json()
+    """
+    Fetches user events from GitHub API.
+    """
+    url = f"https://api.github.com/users/{username}/events"
+    response = requests.get(url)
+    return response
 
 def main():
-    if len(sys.argv) < 1:
+    """
+    Main function to process GitHub user events and categorize them.
+    """
+    if len(sys.argv) < 2:  # Ensure username is provided as a command-line argument
         print("No username provided!")
         exit(-1)
+
+    username = sys.argv[1]
+    response = get_data(username)
     
-    data = get_data(sys.argv[1])
-    forked = []
-    push_sizes = []
-    pushed_repository = []
+    if response.status_code != 200:
+        print(f"Error: {response.status_code}: Failed to find username")
+        return
 
-    for obj in data:
-        payload = obj.get('payload')
-        print(obj.get('type'))
-        match obj.get('type'):
+    # Initialize data containers
+    forked = []  # List of repositories the user forked
+    starred = []  # List of repositories the user starred
+    issued = []   # List of repositories where the user opened an issue
+    pushed_repository = defaultdict(int)  # Dictionary to store total commits per repository
+
+    # Process each event from the API response
+    for event in response.json():
+        payload = event.get('payload', {})  # Ensure payload exists
+        event_type = event.get('type')
+        repository = event.get('repo', {}).get('name', "Unknown Repo")  # Get repo name
+
+        match event_type:
             case 'PushEvent':
-                push_count = payload.get('size')
-                repository = obj.get('repo')['name']
-                pushed_repository.append({"size":push_count, "name":repository, "created_at": obj.get("created_at")})
-            case 'CreateEvent':
-                pass
+                push_count = payload.get('size', 0)  # Default to 0 if missing
+                pushed_repository[repository] += push_count  # Aggregate commits
+            case 'WatchEvent':
+                starred.append(repository)
+            case 'IssuesEvent':
+                issued.append(repository)
             case 'ForkEvent':
-                if isinstance(payload, dict):
-                    forkee = payload.get('forkee')
-                    if isinstance(forkee, dict):
-                        if forkee.get('fork'):
-                            forked.append(forkee.get('full_name'))
+                forkee = payload.get('forkee', {})
+                if forkee.get('fork'):
+                    forked.append(forkee.get('full_name'))
 
+    # Print output
     print("Output:")
-
-    for repository in pushed_repository:
-        print(f"- Pushed {repository.get('size')} commits in {repository.get('name')} at {repository.get('created_at')}") 
+    
+    for repository, commit_count in pushed_repository.items():
+        print(f"- Pushed {commit_count} commits in {repository}")
 
     for repository in forked:
         print(f"- Forked {repository}")
 
+    for repository in starred:
+        print(f"- Starred {repository}")
+
+    for repository in issued:
+        print(f"- Opened a new issue at {repository}")
+
 if __name__ == "__main__":
     main()
+
