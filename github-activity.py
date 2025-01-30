@@ -12,23 +12,34 @@ def main():
         exit(-1)
     
     data = get_data(sys.argv[1])
-    starred = []
     forked = []
-    push_count = 0
+    push_sizes = []
     pushed_repository = []
 
     for obj in data:
         payload = obj.get('payload')
-        if isinstance(payload, dict):
-            forkee = payload.get('forkee')
-            if isinstance(forkee, dict):
-                if forkee.get('fork'):
-                    forked.append(forkee.get('html_url'))
+        print(obj.get('type'))
+        match obj.get('type'):
+            case 'PushEvent':
+                push_count = payload.get('size')
+                repository = obj.get('repo')['name']
+                pushed_repository.append({"size":push_count, "name":repository, "created_at": obj.get("created_at")})
+            case 'CreateEvent':
+                pass
+            case 'ForkEvent':
+                if isinstance(payload, dict):
+                    forkee = payload.get('forkee')
+                    if isinstance(forkee, dict):
+                        if forkee.get('fork'):
+                            forked.append(forkee.get('full_name'))
 
     print("Output:")
 
     for repository in pushed_repository:
-        print(repository['push_count'], 
+        print(f"- Pushed {repository.get('size')} commits in {repository.get('name')} at {repository.get('created_at')}") 
+
+    for repository in forked:
+        print(f"- Forked {repository}")
 
 if __name__ == "__main__":
     main()
