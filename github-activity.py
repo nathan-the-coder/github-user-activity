@@ -2,68 +2,79 @@ import requests
 import sys
 from collections import defaultdict
 
-def get_data(username: str):
+def fetch_user_events(username: str) -> requests.Response:
     """
-    Fetches user events from GitHub API.
+    Fetches user events from the GitHub API.
     """
     url = f"https://api.github.com/users/{username}/events"
     response = requests.get(url)
     return response
 
+def display_event_summary(commit_counts_by_repo, starred_repositories, repositories_with_issues, forked_repositories):
+    """
+    Displays the summary of user events.
+    """
+    print("Event Summary:")
+    
+    for repository, commit_count in commit_counts_by_repo.items():
+        print(f"- Pushed {commit_count} commits in {repository}")
+    
+    for repository in forked_repositories:
+        print(f"- Forked {repository}")
+
+    for repository in starred_repositories:
+        print(f"- Starred {repository}")
+
+    for repository in repositories_with_issues:
+        print(f"- Opened a new issue at {repository}")
+
+def process_github_events(json_data):
+    """
+    Processes GitHub event data and categorizes events.
+    """
+    commit_counts_by_repo = defaultdict(int)
+    starred_repositories = []
+    repositories_with_issues = []
+    forked_repositories = []
+
+    for event in json_data:
+        payload = event.get('payload', {})
+        event_type = event.get('type')
+        repository_name = event.get('repo', {}).get('name', "Unknown Repo")
+        
+        match event_type:
+            case 'PushEvent':
+                push_count = payload.get('size', 0)
+                commit_counts_by_repo[repository_name] += push_count
+            case 'WatchEvent':
+                starred_repositories.append(repository_name)
+            case 'IssuesEvent':
+                repositories_with_issues.append(repository_name)
+            case 'ForkEvent':
+                forkee = payload.get('forkee', {})
+                if forkee.get('fork'):
+                    forked_repositories.append(forkee.get('full_name'))
+
+    return commit_counts_by_repo, starred_repositories, repositories_with_issues, forked_repositories
+
 def main():
     """
     Main function to process GitHub user events and categorize them.
     """
-    if len(sys.argv) < 2:  # Ensure username is provided as a command-line argument
-        print("No username provided!")
+    if len(sys.argv) < 2:
+        print("Error: No username provided!")
         exit(-1)
 
     username = sys.argv[1]
-    response = get_data(username)
-    
+    response = fetch_user_events(username)
+
     if response.status_code != 200:
         print(f"Error: {response.status_code}: Failed to find username")
         return
 
-    # Initialize data containers
-    forked = []  # List of repositories the user forked
-    starred = []  # List of repositories the user starred
-    issued = []   # List of repositories where the user opened an issue
-    pushed_repository = defaultdict(int)  # Dictionary to store total commits per repository
-
-    # Process each event from the API response
-    for event in response.json():
-        payload = event.get('payload', {})  # Ensure payload exists
-        event_type = event.get('type')
-        repository = event.get('repo', {}).get('name', "Unknown Repo")  # Get repo name
-
-        match event_type:
-            case 'PushEvent':
-                push_count = payload.get('size', 0)  # Default to 0 if missing
-                pushed_repository[repository] += push_count  # Aggregate commits
-            case 'WatchEvent':
-                starred.append(repository)
-            case 'IssuesEvent':
-                issued.append(repository)
-            case 'ForkEvent':
-                forkee = payload.get('forkee', {})
-                if forkee.get('fork'):
-                    forked.append(forkee.get('full_name'))
-
-    # Print output
-    print("Output:")
+    commit_counts_by_repo, starred_repositories, repositories_with_issues, forked_repositories = process_github_events(response.json())
     
-    for repository, commit_count in pushed_repository.items():
-        print(f"- Pushed {commit_count} commits in {repository}")
-
-    for repository in forked:
-        print(f"- Forked {repository}")
-
-    for repository in starred:
-        print(f"- Starred {repository}")
-
-    for repository in issued:
-        print(f"- Opened a new issue at {repository}")
+    display_event_summary(commit_counts_by_repo, starred_repositories, repositories_with_issues, forked_repositories)
 
 if __name__ == "__main__":
     main()

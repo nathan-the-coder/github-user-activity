@@ -1,0 +1,29 @@
+commit c6583ea4018a76abeb84cbeec3d6724282fed484
+Author: Nathaniel Ramos <nathanielramos726@gmail.com>
+Date:   Thu Jan 30 19:41:09 2025 +0800
+
+    Add some finishing touches, then done
+
+commit f8e6cc1cd7608ebeff97937bf8eeb6c3d998b870
+Author: Nathaniel Ramos <nathanielramos726@gmail.com>
+Date:   Thu Jan 30 19:33:17 2025 +0800
+
+    Finish implementing code that catches all events from the api
+
+commit d20a96a3577563fb05cf3d392be2a805f89bec24
+Author: Nathaniel Ramos <nathanielramos726@gmail.com>
+Date:   Thu Jan 30 16:00:43 2025 +0800
+
+    Added checks for events and code to track what happened in the event
+
+commit 4d06575f8ffa374c4a83e7820ca2ed32f41f0c8a
+Author: Nathaniel Ramos <nathanielramos726@gmail.com>
+Date:   Thu Jan 30 12:04:09 2025 +0800
+
+    Added some initial code for testing out the github api
+
+commit ea06863da6555dda65fd94a40ecc3d793b2c0109
+Author: Nathaniel Ramos <nathanielramos726@gmail.com>
+Date:   Wed Jan 29 19:15:17 2025 +0800
+
+    Initial commit

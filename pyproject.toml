@@ -1,0 +1,18 @@
+[project]
+name = "github-user-activity"
+version = "0.1.0"
+description = "a simple command line interface (CLI) to fetch the recent activity of a GitHub user that is displayed on the terminal."
+authors = [
+    {name = "Nathaniel Ramos",email = "nathanielramos726@gmail.com"}
+]
+license = {text = "MIT"}
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "requests (>=2.32.3,<3.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
